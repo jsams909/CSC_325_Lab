@@ -1,5 +1,4 @@
 package com.example.csc_325_lab;
-
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
@@ -7,8 +6,10 @@ import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.util.StringConverter;
 
 public class HelloController {
+    // instance variables for interacting with GUI components
     @FXML private Slider redSlider;
     @FXML private Slider greenSlider;
     @FXML private Slider blueSlider;
@@ -26,15 +27,11 @@ public class HelloController {
     private double alpha = 1.0;
 
     public void initialize() {
-        // bind TextField values to corresponding Slider values
-        redTextField.textProperty().bind(
-                redSlider.valueProperty().asString("%.0f"));
-        greenTextField.textProperty().bind(
-                greenSlider.valueProperty().asString("%.0f"));
-        blueTextField.textProperty().bind(
-                blueSlider.valueProperty().asString("%.0f"));
-        alphaTextField.textProperty().bind(
-                alphaSlider.valueProperty().asString("%.2f"));
+        // Create bidirectional bindings between TextFields and Sliders
+        createBidirectionalBinding(redTextField, redSlider, 0);
+        createBidirectionalBinding(greenTextField, greenSlider, 0);
+        createBidirectionalBinding(blueTextField, blueSlider, 0);
+        createBidirectionalBinding(alphaTextField, alphaSlider, 2);
 
         // listeners that set Rectangle's fill based on Slider changes
         redSlider.valueProperty().addListener(
@@ -77,5 +74,39 @@ public class HelloController {
                     }
                 }
         );
+    }
+
+    // Helper method to create bidirectional bindings with format control
+    private void createBidirectionalBinding(TextField textField, Slider slider, int decimalPlaces) {
+        // Unbind any existing binding (important when changing from unidirectional to bidirectional)
+        textField.textProperty().unbind();
+
+        // Create string converter for bidirectional binding
+        StringConverter<Number> converter = new StringConverter<Number>() {
+            @Override
+            public String toString(Number number) {
+                if (number == null) {
+                    return "";
+                }
+                if (decimalPlaces == 0) {
+                    return String.format("%.0f", number.doubleValue());
+                } else {
+                    return String.format("%." + decimalPlaces + "f", number.doubleValue());
+                }
+            }
+
+            @Override
+            public Number fromString(String string) {
+                try {
+                    return Double.parseDouble(string);
+                } catch (NumberFormatException e) {
+                    // Return current value if parsing fails
+                    return slider.getValue();
+                }
+            }
+        };
+
+        // Create bidirectional binding
+        textField.textProperty().bindBidirectional(slider.valueProperty(), converter);
     }
 }
